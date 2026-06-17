@@ -2,35 +2,44 @@
 Relatório de Atendentes - Blip Desk API
 Busca todos os atendentes de múltiplos bots e consolida num único CSV.
 
-Para adicionar mais bots: inclua um novo item na lista BOTS.
+As chaves de API são lidas da variável de ambiente BOTS_CONFIG (JSON).
+Para rodar localmente, defina a variável antes de executar:
+  Windows: set BOTS_CONFIG=[{"name":"Bot 14","contract_id":"...","key":"..."}]
+  Linux:   export BOTS_CONFIG='[...]'
 """
 
 import requests
 import uuid
 import csv
 import os
-from datetime import datetime
+import json
+from datetime import datetime, timezone, timedelta
 
-# ── Bots ───────────────────────────────────────────────────────────────────────
-BOTS = [
-    {"name": "Bot 14",        "contract_id": "captaaibuilder14",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNDphNks0ZnpmUzRmU3lKR0kwUktsRQ=="},
-    {"name": "Quinto Andar",  "contract_id": "quintoandarcaptaai", "key": "Key cXVpbnRvYW5kYXJjYXB0YWFpOmNsbXZnaUd1eWxjN1dTS3pES0pS"},
-    {"name": "Bot 1",         "contract_id": "captaiath1",         "key": "Key Y2FwdGFpYXRoMTo5c2RPNFZZZzduZWV5WHNzdk9oQw=="},
-    {"name": "Bot 2",         "contract_id": "captaiath2",         "key": "Key Y2FwdGFpYXRoMjpaZmM3ajVhRHJRUUtsQ1luS3ZpWQ=="},
-    {"name": "Bot 3",         "contract_id": "captaiath3",         "key": "Key Y2FwdGFpYXRoMzpWRExxOW51WGNIbFZwUXN4cnU4VA=="},
-    {"name": "Bot 4",         "contract_id": "captaiath4",         "key": "Key Y2FwdGFpYXRoNDpkZEhmSUVDSWZKZHBCTzlzR2U0RA=="},
-    {"name": "Bot 5",         "contract_id": "captaiath5",         "key": "Key Y2FwdGFpYXRoNTpjSjFwQlBhclNMRmhReFp1d252Sw=="},
-    {"name": "Bot 6",         "contract_id": "captaiath6",         "key": "Key Y2FwdGFpYXRoNjpKQ0xJMERWOHBGR095Nld0VVMwZQ=="},
-    {"name": "Bot 8",         "contract_id": "captaiath8",         "key": "Key Y2FwdGFpYXRoODpVQVp3aDJMRE54VHFRV2V2MW9Maw=="},
-    {"name": "Bot 9",         "contract_id": "captaaibuilder9",    "key": "Key Y2FwdGFhaWJ1aWxkZXI5OmtGc0JEaXFwUUpUZXhmQ1lRUElX"},
-    {"name": "Bot 10",        "contract_id": "captaaibuilder10",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxMDpjWVFOUVEwcHF1QThoQ2hzeUZpUg=="},
-    {"name": "Bot 11",        "contract_id": "captaaibuilder11",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxMTpWZTN0T1JQdk15dFJhR2xJTGIzeA=="},
-    {"name": "Bot 15",        "contract_id": "captaaibuilder15",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNTo2cFNGcWROdU5FR01hTU9nYndVOA=="},
-    {"name": "Bot 16",        "contract_id": "captaaibuilder16",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNjo1U0hGcmVGMWQ3OXgxaVUwa0trMA=="},
-    {"name": "Bot 17",        "contract_id": "captaaibuilder17",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNzpUNm41NUIwYlQ1aG5paU5qRUNzRA=="},
-    {"name": "Bot 18",        "contract_id": "captaaibuilder18",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxODp4YWRrMnRVeXpYMUxSU1VmYkFLSA=="},
-    {"name": "Bot 19",        "contract_id": "captaaibuilder19",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxOTpFSDRNeHkyU0ROYWdKZ3ZIUno4RQ=="},
-]
+# ── Bots (lidos do ambiente) ───────────────────────────────────────────────────
+_BOTS_JSON = os.environ.get("BOTS_CONFIG", "")
+if _BOTS_JSON:
+    BOTS = json.loads(_BOTS_JSON)
+else:
+    # Fallback local para testes (remova antes de tornar o repo público)
+    BOTS = [
+        {"name": "Bot 14",        "contract_id": "captaaibuilder14",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNDphNks0ZnpmUzRmU3lKR0kwUktsRQ=="},
+        {"name": "Quinto Andar",  "contract_id": "quintoandarcaptaai", "key": "Key cXVpbnRvYW5kYXJjYXB0YWFpOmNsbXZnaUd1eWxjN1dTS3pES0pS"},
+        {"name": "Bot 1",         "contract_id": "captaiath1",         "key": "Key Y2FwdGFpYXRoMTo5c2RPNFZZZzduZWV5WHNzdk9oQw=="},
+        {"name": "Bot 2",         "contract_id": "captaiath2",         "key": "Key Y2FwdGFpYXRoMjpaZmM3ajVhRHJRUUtsQ1luS3ZpWQ=="},
+        {"name": "Bot 3",         "contract_id": "captaiath3",         "key": "Key Y2FwdGFpYXRoMzpWRExxOW51WGNIbFZwUXN4cnU4VA=="},
+        {"name": "Bot 4",         "contract_id": "captaiath4",         "key": "Key Y2FwdGFpYXRoNDpkZEhmSUVDSWZKZHBCTzlzR2U0RA=="},
+        {"name": "Bot 5",         "contract_id": "captaiath5",         "key": "Key Y2FwdGFpYXRoNTpjSjFwQlBhclNMRmhReFp1d252Sw=="},
+        {"name": "Bot 6",         "contract_id": "captaiath6",         "key": "Key Y2FwdGFpYXRoNjpKQ0xJMERWOHBGR095Nld0VVMwZQ=="},
+        {"name": "Bot 8",         "contract_id": "captaiath8",         "key": "Key Y2FwdGFpYXRoODpVQVp3aDJMRE54VHFRV2V2MW9Maw=="},
+        {"name": "Bot 9",         "contract_id": "captaaibuilder9",    "key": "Key Y2FwdGFhaWJ1aWxkZXI5OmtGc0JEaXFwUUpUZXhmQ1lRUElX"},
+        {"name": "Bot 10",        "contract_id": "captaaibuilder10",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxMDpjWVFOUVEwcHF1QThoQ2hzeUZpUg=="},
+        {"name": "Bot 11",        "contract_id": "captaaibuilder11",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxMTpWZTN0T1JQdk15dFJhR2xJTGIzeA=="},
+        {"name": "Bot 15",        "contract_id": "captaaibuilder15",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNTo2cFNGcWROdU5FR01hTU9nYndVOA=="},
+        {"name": "Bot 16",        "contract_id": "captaaibuilder16",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNjo1U0hGcmVGMWQ3OXgxaVUwa0trMA=="},
+        {"name": "Bot 17",        "contract_id": "captaaibuilder17",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxNzpUNm41NUIwYlQ1aG5paU5qRUNzRA=="},
+        {"name": "Bot 18",        "contract_id": "captaaibuilder18",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxODp4YWRrMnRVeXpYMUxSU1VmYkFLSA=="},
+        {"name": "Bot 19",        "contract_id": "captaaibuilder19",   "key": "Key Y2FwdGFhaWJ1aWxkZXIxOTpFSDRNeHkyU0ROYWdKZ3ZIUno4RQ=="},
+    ]
 
 # ── Configurações ──────────────────────────────────────────────────────────────
 OUTPUT_PATH = os.environ.get("OUTPUT_PATH", "atendentes.csv")
@@ -53,18 +62,12 @@ AGENT_FIELDS = [
 # ──────────────────────────────────────────────────────────────────────────────
 
 def fix_full_name(agent: dict) -> dict:
-    """
-    Se fullName parecer um e-mail, converte para nome legível.
-    Ex: sandra.barbosa@quintoandar.com → Sandra Barbosa
-    """
     name = agent.get("fullName", "")
     if "@" in name:
-        name_part = name.split("@")[0]          # sandra.barbosa
-        agent["fullName"] = " ".join(
-            part.capitalize() for part in name_part.split(".")
-        )                                        # Sandra Barbosa
+        name_part = name.split("@")[0]
+        agent["fullName"] = " ".join(part.capitalize() for part in name_part.split("."))
     else:
-        agent["fullName"] = name.title()        # LEILIANE GONÇALVES → Leiliane Gonçalves
+        agent["fullName"] = name.title()
     return agent
 
 
@@ -121,7 +124,8 @@ def export_csv(rows: list, run_date: str, run_hour: str) -> None:
 
 
 if __name__ == "__main__":
-    now      = datetime.now()
+    BRT      = timezone(timedelta(hours=-3))
+    now      = datetime.now(BRT)
     run_date = now.strftime("%d-%m-%Y")
     run_hour = now.strftime("%H:%M")
 
