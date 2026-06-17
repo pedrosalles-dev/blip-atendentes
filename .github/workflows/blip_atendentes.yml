@@ -1,0 +1,33 @@
+name: Blip Atendentes
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # roda de 10 em 10 minutos
+  workflow_dispatch:          # permite disparar manualmente pelo site do GitHub
+
+jobs:
+  fetch-atendentes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install requests
+
+      - name: Rodar script
+        run: python atendentes_blip.py
+
+      - name: Salvar CSV no repositório
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add atendentes.csv
+          git diff --staged --quiet || git commit -m "atendentes atualizado $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
