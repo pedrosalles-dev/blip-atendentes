@@ -9,7 +9,7 @@ import requests
 import uuid
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # ── Bots ───────────────────────────────────────────────────────────────────────
 BOTS = [
@@ -121,7 +121,7 @@ def export_csv(rows: list, run_date: str, run_hour: str) -> None:
 
 
 if __name__ == "__main__":
-    now      = datetime.now()
+    now      = datetime.now(timezone(timedelta(hours=-3)))
     run_date = now.strftime("%d-%m-%Y")
     run_hour = now.strftime("%H:%M")
 
