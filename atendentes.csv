@@ -1,3 +1,5 @@
 ﻿run_date,run_hour,bot,identity,fullName,email,teams,status,lastServiceDate,agentSlots,ticketsInService
-24-08-2026,08:50,Quinto Andar,daiany.soares%40quintoandar.com.br@blip.ai,Daiany Soares,daiany.soares@quintoandar.com.br,"['Default', 'Squad 3']",Offline,,,
-24-08-2026,08:50,Quinto Andar,dayse.ssantos%40quintoandar.com.br@blip.ai,Dayse Santos,dayse.ssantos@quintoandar.com.br,"['Default', 'Squad 3']",Offline,,,
+24-08-2026,09:22,Bot 4,laryssa.assis%40quintoandar.com.br@blip.ai,Laryssa Machado De Assis,laryssa.assis@quintoandar.com.br,"['Default', 'Squad 4']",Offline,,,
+24-08-2026,09:22,Bot 4,richardson.dantas%40quintoandar.com.br@blip.ai,Richardson Dos Santos Dantas,richardson.dantas@quintoandar.com.br,"['Default', 'Squad 4']",Online,,,
+24-08-2026,09:22,Bot 9,jean.rodrigues%40quintoandar.com.br@blip.ai,Jean Rodrigues,jean.rodrigues@quintoandar.com.br,"['Default', 'Squad 3']",Offline,,,
+24-08-2026,09:22,Bot 9,joao.teixeira%40quintoandar.com.br@blip.ai,João Paulo Teixeira,joao.teixeira@quintoandar.com.br,"['Default', 'Squad 2']",Online,,,
